@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <script src="https://cdn.tailwindcss.com"></script><title>Xenory - Configurar</title>
+</head>
+<body class="bg-[#0b0e14] text-gray-300 p-6 font-sans">
+    <form action="/save/<%= guild.id %>" method="POST" class="max-w-6xl mx-auto space-y-6">
+        <div class="flex justify-between items-center bg-[#12151d] p-6 rounded-3xl border border-gray-800">
+            <h2 class="text-2xl font-bold text-white">Xenory: <%= guild.name %></h2>
+            <button type="submit" class="bg-indigo-600 text-white px-10 py-3 rounded-xl font-bold uppercase text-xs">Salvar</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- SEGURANÇA -->
+            <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800 space-y-4">
+                <h3 class="text-indigo-500 font-black uppercase text-xs">Auto-Role & Verificação</h3>
+                <label class="text-[10px] block">CARGO AO ENTRAR (SERÁ REMOVIDO NA VERIFICAÇÃO)</label>
+                <select name="autoRoleId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
+                    <option value="">Nenhum</option>
+                    <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.autoRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
+                </select>
+                <label class="text-[10px] block">CARGO DE VERIFICADO (GANHA ESTE)</label>
+                <select name="verifyRoleId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
+                    <option value="">Nenhum</option>
+                    <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.verifyRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
+                </select>
+                <label class="text-[10px] block">CANAL DE VERIFICAÇÃO</label>
+                <select name="verifyChannelId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
+                    <% channels.filter(c => c.type === 0).forEach(ch => { %> <option value="<%= ch.id %>" <%= config.verifyChannelId == ch.id ? 'selected' : '' %>># <%= ch.name %></option> <% }) %>
+                </select>
+            </div>
+
+            <!-- RECRUTAMENTO -->
+            <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800 space-y-4">
+                <h3 class="text-purple-500 font-black uppercase text-xs">Sistema de Fichas (Foto/Vídeo)</h3>
+                <label class="text-[10px] block">CATEGORIA DAS FICHAS</label>
+                <select name="formCategoryId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
+                    <option value="">Nenhuma</option>
+                    <% channels.filter(c => c.type === 4).forEach(cat => { %> <option value="<%= cat.id %>" <%= config.formCategoryId == cat.id ? 'selected' : '' %>><%= cat.name %></option> <% }) %>
+                </select>
+                <label class="text-[10px] block">CANAL ONDE A STAFF RECEBE AS FICHAS</label>
+                <select name="formStaffChannelId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
+                    <% channels.filter(c => c.type === 0).forEach(ch => { %> <option value="<%= ch.id %>" <%= config.formStaffChannelId == ch.id ? 'selected' : '' %>># <%= ch.name %></option> <% }) %>
+                </select>
+                <label class="text-[10px] block">CARGO STAFF PARA MARCAR</label>
+                <select name="staffRoleId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
+                    <option value="">Ninguém</option>
+                    <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.staffRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
+                </select>
+            </div>
+        </div>
+    </form>
+</body>
+</html>
