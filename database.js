@@ -1,18 +1,17 @@
+
 const mongoose = require('mongoose');
+
 const GuildSchema = new mongoose.Schema({
     guildId: { type: String, required: true, unique: true },
-    isPlus: { type: Boolean, default: false },
-    autoRoleId: String,
+    // Segurança
+    autoRoleId: String,     // Cargo que ganha ao entrar (ex: Não Verificado)
+    verifyRoleId: String,   // Cargo que ganha ao clicar no botão
     verifyChannelId: String,
-    verifyRoleId: String,
-    roleMsgChannelId: String,
-    roleId1: String,
-    roleLabel1: String,
-    roleEmoji1: String,
-    formRequestChannelId: String,
+    // Recrutamento
     formStaffChannelId: String,
     formCategoryId: String,
     staffRoleId: String,
     formTitle: { type: String, default: 'Recrutamento Staff' }
 });
+
 module.exports = mongoose.model('GuildConfig', GuildSchema);
