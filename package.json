@@ -1,5 +1,5 @@
 {
-  "name": "xenory-render",
+  "name": "xenory-koa-render",
   "version": "2.1.0",
   "main": "app.js",
   "scripts": {
