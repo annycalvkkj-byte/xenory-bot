@@ -1,21 +1,17 @@
 {
-  "name": "xenory-koa-render",
-  "version": "2.1.0",
+  "name": "xenory-final",
+  "version": "3.0.0",
   "main": "app.js",
-  "scripts": {
-    "start": "node app.js"
-  },
+  "scripts": { "start": "node app.js" },
   "dependencies": {
-    "discord.js": "latest",
-    "dotenv": "latest",
-    "koa": "latest",
-    "koa-router": "latest",
-    "koa-ejs": "latest",
-    "koa-bodyparser": "latest",
-    "koa-session": "latest",
-    "koa-passport": "latest",
-    "passport-discord": "latest",
-    "mongoose": "latest",
-    "axios": "latest"
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "express-session": "^1.18.0",
+    "ejs": "^3.1.9",
+    "mongoose": "^8.1.1",
+    "passport": "^0.7.0",
+    "passport-discord": "^0.1.4",
+    "axios": "^1.6.7"
   }
 }
