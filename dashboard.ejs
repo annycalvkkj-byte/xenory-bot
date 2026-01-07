@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <script src="https://cdn.tailwindcss.com"></script><title>Xenory - Dashboard</title>
+</head>
+<body class="bg-[#0b0e14] text-white p-10 font-sans">
+    <div class="max-w-5xl mx-auto">
+        <header class="flex justify-between items-center mb-10 bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
+            <h1 class="text-2xl font-black italic text-indigo-500 uppercase">Dashboard</h1>
+            <a href="https://www.instagram.com/hexorylabs" target="_blank" class="text-pink-500 font-bold">@hexorylabs</a>
+        </header>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <% guilds.forEach(g => { %>
+                <div class="bg-[#12151d] p-6 rounded-3xl border border-gray-800 flex justify-between items-center">
+                    <span class="font-bold"><%= g.name %></span>
+                    <a href="/config/<%= g.id %>" class="bg-indigo-600 px-6 py-2 rounded-xl font-bold text-xs uppercase">Configurar</a>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+</body>
+</html>
