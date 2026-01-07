@@ -1,44 +1,38 @@
 require('dotenv').config();
-const { 
-    Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, 
-    ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType, ModalBuilder, TextInputBuilder, TextInputStyle, InteractionType 
-} = require('discord.js');
-const express = require('express');
-const mongoose = require('mongoose');
-const passport = require('passport');
-const session = require('express-session');
+const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType } = require('discord.js');
+const Koa = require('koa');
+const Router = require('koa-router');
+const render = require('koa-ejs');
+const bodyParser = require('koa-bodyparser');
+const session = require('koa-session');
+const passport = require('koa-passport');
 const Strategy = require('passport-discord').Strategy;
-const path = require('path');
+const mongoose = require('mongoose');
 const GuildConfig = require('./database');
+const axios = require('axios'); // Para o Auto-Ping
 
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, 
-        GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.DirectMessages
-    ],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers, GatewayIntentBits.DirectMessages],
     partials: [Partials.Channel, Partials.Message, Partials.User]
 });
 
 mongoose.connect(process.env.MONGO_URI).then(() => console.log("✅ DB Xenory Conectado"));
 
-const app = express();
-app.set('trust proxy', 1); // CRÍTICO PARA RAILWAY
-app.set('view engine', 'ejs');
-app.set('views', __dirname);
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+const app = new Koa();
+const router = new Router();
 
-app.use(session({
-    secret: 'xenory_railway_stable_2026',
-    resave: true,
-    saveUninitialized: false,
-    cookie: { secure: true, sameSite: 'lax', maxAge: 60000 * 60 * 24 }
-}));
+// CONFIGURAÇÃO RENDER
+app.proxy = true; 
+render(app, { root: __dirname, layout: false, viewExt: 'ejs', cache: false });
 
+app.keys = ['xenory_render_2026'];
+app.use(session({ key: 'koa.sess', maxAge: 86400000, renew: true }, app));
+app.use(bodyParser());
 app.use(passport.initialize());
 app.use(passport.session());
 
+passport.serializeUser((u, d) => d(null, u));
+passport.deserializeUser((o, d) => d(null, o));
 passport.use(new Strategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
@@ -46,16 +40,36 @@ passport.use(new Strategy({
     scope: ['identify', 'guilds']
 }, (at, rt, profile, done) => done(null, profile)));
 
-passport.serializeUser((u, d) => d(null, u));
-passport.deserializeUser((o, d) => d(null, o));
+// --- LÓGICA DO BOT (AUTO-ROLE E VERIFICAÇÃO) ---
 
-// --- BOT LOGIC ---
+// 1. ADICIONAR CARGO AO ENTRAR
+client.on('guildMemberAdd', async (member) => {
+    const config = await GuildConfig.findOne({ guildId: member.guild.id });
+    if (config?.autoRoleId) {
+        member.roles.add(config.autoRoleId).catch(() => console.log("Erro ao dar cargo inicial."));
+    }
+});
 
 client.on('interactionCreate', async (int) => {
     if (!int.guild) return;
     const config = await GuildConfig.findOne({ guildId: int.guild.id });
 
-    // Iniciar Form
+    // 2. VERIFICAÇÃO (GANHA UM, PERDE O OUTRO)
+    if (int.customId === 'xenory_verify') {
+        if (!config?.verifyRoleId) return int.reply({ content: "Configuração incompleta no site.", ephemeral: true });
+
+        // Adiciona cargo de Verificado
+        await int.member.roles.add(config.verifyRoleId).catch(() => {});
+        
+        // Remove cargo de Auto-Role (se ele tiver)
+        if (config.autoRoleId && int.member.roles.cache.has(config.autoRoleId)) {
+            await int.member.roles.remove(config.autoRoleId).catch(() => {});
+        }
+
+        return int.reply({ content: "✅ Você foi verificado! O cargo restrito foi removido.", ephemeral: true });
+    }
+
+    // Lógica de Recrutamento (Foto/Vídeo)
     if (int.customId === 'xenory_start_form') {
         const channel = await int.guild.channels.create({
             name: `ficha-${int.user.username}`,
@@ -66,33 +80,12 @@ client.on('interactionCreate', async (int) => {
                 { id: int.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles] }
             ]
         });
-        await channel.send({ content: `${int.user}`, embeds: [new EmbedBuilder().setTitle("📸 Mídia Requerida").setDescription("Envie agora uma **FOTO ou VÍDEO** neste canal.").setColor("Purple")] });
-        return int.reply({ content: `Canal criado: ${channel}`, ephemeral: true });
-    }
-
-    // Staff Buttons
-    if (int.customId.startsWith('staff_app_') || int.customId.startsWith('staff_rej_')) {
-        const [action, userId] = int.customId.split('_').slice(1, 3);
-        const user = await client.users.fetch(userId).catch(() => null);
-        if (action === 'app') {
-            if (user) user.send(`✅ Sua ficha em **${int.guild.name}** foi aceita!`).catch(() => {});
-            await int.reply(`Aprovado: <@${userId}>`);
-        } else {
-            if (user) user.send(`❌ Sua ficha em **${int.guild.name}** foi recusada.`).catch(() => {});
-            await int.reply(`Recusado: <@${userId}>`);
-        }
-        return int.message.delete().catch(() => {});
-    }
-
-    // Modal Edit Form
-    if (int.isModalSubmit() && int.customId === 'modal_edit_form') {
-        const title = int.fields.getTextInputValue('title_input');
-        await GuildConfig.findOneAndUpdate({ guildId: int.guild.id }, { formTitle: title }, { upsert: true });
-        return int.reply({ content: "✅ Título atualizado!", ephemeral: true });
+        await channel.send({ content: `${int.user}`, embeds: [new EmbedBuilder().setTitle("📸 Envio de Mídia").setDescription("Mande uma **FOTO ou VÍDEO** agora.").setColor("Purple")] });
+        return int.reply({ content: `Canal aberto: ${channel}`, ephemeral: true });
     }
 });
 
-// Capturar Mídia
+// Mensagens de Mídia (Fichas)
 client.on('messageCreate', async (msg) => {
     if (msg.author.bot || !msg.channel.name.startsWith('ficha-')) return;
     if (msg.attachments.size > 0) {
@@ -100,75 +93,57 @@ client.on('messageCreate', async (msg) => {
         const staffChan = msg.guild.channels.cache.get(config?.formStaffChannelId);
         if (staffChan) {
             const file = msg.attachments.first();
-            const embed = new EmbedBuilder().setTitle("📋 NOVA FICHA").addFields({name:"Candidato", value:msg.author.tag}).setColor("Orange");
-            if (!file.contentType?.includes('video')) embed.setImage(file.url);
+            const e = new EmbedBuilder().setTitle("📋 NOVA FICHA").addFields({ name: "Candidato", value: `${msg.author.tag}` }).setColor("Orange");
+            if (!file.contentType?.includes('video')) e.setImage(file.url);
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId(`staff_app_${msg.author.id}`).setLabel("Aceitar").setStyle(ButtonStyle.Success),
                 new ButtonBuilder().setCustomId(`staff_rej_${msg.author.id}`).setLabel("Recusar").setStyle(ButtonStyle.Danger)
             );
-            await staffChan.send({ content: config.staffRoleId ? `<@&${config.staffRoleId}>` : "Nova ficha!", embeds: [embed], components: [row] });
-            if (file.contentType?.includes('video')) await staffChan.send({ content: `🎥 Vídeo: ${file.url}` });
-            await msg.channel.send("✅ Enviado para Staff! Deletando em 5 segundos...");
+            await staffChan.send({ content: config.staffRoleId ? `<@&${config.staffRoleId}>` : "Nova ficha!", embeds: [e], components: [row] });
+            if (file.contentType?.includes('video')) await staffChan.send({ content: `🎥 **VÍDEO:** ${file.url}` });
+            await msg.channel.send("✅ Enviado! Fechando em 5 segundos.");
             setTimeout(() => msg.channel.delete().catch(() => {}), 5000);
         }
     }
 });
 
-// Comandos de Barra Manual (Mensagem)
-client.on('messageCreate', async (msg) => {
-    if (!msg.content.startsWith('/') || msg.author.bot || !msg.member.permissions.has(PermissionFlagsBits.Administrator)) return;
-    const cmd = msg.content.toLowerCase();
-    if (cmd === '/form') {
-        const config = await GuildConfig.findOne({ guildId: msg.guild.id });
-        const e = new EmbedBuilder().setTitle(config?.formTitle || "Recrutamento").setDescription("Clique para iniciar.").setColor("Purple");
-        const r = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('xenory_start_form').setLabel('Iniciar').setStyle(ButtonStyle.Primary));
-        msg.channel.send({ embeds: [e], components: [r] });
-    }
-    if (cmd === '/editform') {
-        const modal = new ModalBuilder().setCustomId('modal_edit_form').setTitle('Editar Form');
-        const input = new TextInputBuilder().setCustomId('title_input').setLabel('Título').setStyle(TextInputStyle.Short).setRequired(true);
-        modal.addComponents(new ActionRowBuilder().addComponents(input));
-        // Como modal precisa de interação, enviamos um botão para abrir
-        const r = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('open_modal_btn').setLabel('Abrir Editor').setStyle(ButtonStyle.Secondary));
-        msg.reply({ content: "Clique para editar:", components: [r] });
-    }
+// --- ROTAS WEB ---
+router.get('/', async (ctx) => { await ctx.render('index'); });
+router.get('/login', passport.authenticate('discord'));
+router.get('/auth/discord/callback', passport.authenticate('discord', { failureRedirect: '/' }), async (ctx) => {
+    ctx.redirect('/dashboard');
 });
-
-client.on('interactionCreate', async (int) => {
-    if (int.customId === 'open_modal_btn') {
-        const modal = new ModalBuilder().setCustomId('modal_edit_form').setTitle('Editar Form');
-        const input = new TextInputBuilder().setCustomId('title_input').setLabel('Título').setStyle(TextInputStyle.Short).setRequired(true);
-        modal.addComponents(new ActionRowBuilder().addComponents(input));
-        await int.showModal(modal);
-    }
+router.get('/dashboard', async (ctx) => {
+    if (!ctx.isAuthenticated()) return ctx.redirect('/login');
+    const guilds = ctx.state.user.guilds.filter(g => (g.permissions & 0x8) === 0x8);
+    await ctx.render('dashboard', { guilds });
 });
-
-// --- ROUTES ---
-
-app.get('/', (req, res) => res.render('index'));
-app.get('/login', passport.authenticate('discord'));
-app.get('/auth/discord/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => {
-    req.session.save(() => res.redirect('/dashboard'));
-});
-app.get('/dashboard', (req, res) => {
-    if (!req.isAuthenticated()) return res.redirect('/login');
-    const guilds = req.user.guilds.filter(g => (g.permissions & 0x8) === 0x8);
-    res.render('dashboard', { guilds });
-});
-app.get('/config/:id', async (req, res) => {
-    if (!req.isAuthenticated()) return res.redirect('/login');
-    const guild = await client.guilds.fetch(req.params.id).catch(() => null);
-    if (!guild) return res.send("Bot fora do servidor.");
-    const config = await GuildConfig.findOne({ guildId: req.params.id }) || { guildId: req.params.id };
+router.get('/config/:id', async (ctx) => {
+    if (!ctx.isAuthenticated()) return ctx.redirect('/login');
+    const guild = await client.guilds.fetch(ctx.params.id).catch(() => null);
+    if (!guild) return ctx.body = "Bot não encontrado.";
+    const config = await GuildConfig.findOne({ guildId: ctx.params.id }) || { guildId: ctx.params.id };
     const channels = guild.channels.cache.map(c => ({ id: c.id, name: c.name, type: c.type }));
     const roles = guild.roles.cache.map(r => ({ id: r.id, name: r.name }));
-    res.render('config', { guild, config, channels, roles });
+    await ctx.render('config', { guild, config, channels, roles });
 });
-app.post('/save/:id', async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    await GuildConfig.findOneAndUpdate({ guildId: req.params.id }, req.body, { upsert: true });
-    req.session.save(() => res.redirect('/dashboard'));
+router.post('/save/:id', async (ctx) => {
+    if (!ctx.isAuthenticated()) return ctx.status = 401;
+    await GuildConfig.findOneAndUpdate({ guildId: ctx.params.id }, ctx.request.body, { upsert: true });
+    ctx.redirect('/dashboard');
 });
 
-app.listen(process.env.PORT || 3000);
+app.use(router.routes()).use(router.allowedMethods());
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`🚀 Xenory On na porta ${PORT}`);
+    
+    // SISTEMA AUTO-PING (Mantém o Render acordado)
+    setInterval(() => {
+        const url = process.env.CALLBACK_URL.split('/auth')[0]; // Pega a URL base do seu site
+        axios.get(url).then(() => console.log("⚡ Auto-Ping: Mantendo acordado!")).catch(() => {});
+    }, 1000 * 60 * 10); // A cada 10 minutos
+});
+
 client.login(process.env.TOKEN);
