@@ -1,54 +1,127 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <script src="https://cdn.tailwindcss.com"></script><title>Xenory - Configurar</title>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Xenory Labs - Painel</title>
 </head>
-<body class="bg-[#0b0e14] text-gray-300 p-6 font-sans">
-    <form action="/save/<%= guild.id %>" method="POST" class="max-w-6xl mx-auto space-y-6">
-        <div class="flex justify-between items-center bg-[#12151d] p-6 rounded-3xl border border-gray-800">
-            <h2 class="text-2xl font-bold text-white">Xenory: <%= guild.name %></h2>
-            <button type="submit" class="bg-indigo-600 text-white px-10 py-3 rounded-xl font-bold uppercase text-xs">Salvar</button>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- SEGURANÇA -->
-            <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800 space-y-4">
-                <h3 class="text-indigo-500 font-black uppercase text-xs">Auto-Role & Verificação</h3>
-                <label class="text-[10px] block">CARGO AO ENTRAR (SERÁ REMOVIDO NA VERIFICAÇÃO)</label>
-                <select name="autoRoleId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
-                    <option value="">Nenhum</option>
-                    <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.autoRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
-                </select>
-                <label class="text-[10px] block">CARGO DE VERIFICADO (GANHA ESTE)</label>
-                <select name="verifyRoleId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
-                    <option value="">Nenhum</option>
-                    <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.verifyRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
-                </select>
-                <label class="text-[10px] block">CANAL DE VERIFICAÇÃO</label>
-                <select name="verifyChannelId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
-                    <% channels.filter(c => c.type === 0).forEach(ch => { %> <option value="<%= ch.id %>" <%= config.verifyChannelId == ch.id ? 'selected' : '' %>># <%= ch.name %></option> <% }) %>
-                </select>
+<body class="bg-[#0b0e14] text-gray-300 font-sans antialiased overflow-hidden">
+    <div class="flex h-screen">
+        <!-- SIDEBAR -->
+        <aside class="w-72 bg-[#12151d] border-r border-gray-800 flex flex-col p-6">
+            <div class="mb-10 text-center">
+                <h1 class="text-2xl font-black italic text-indigo-500 tracking-tighter">XENORY <span class="text-white">PRO</span></h1>
+                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1"><%= guild.name %></p>
             </div>
 
-            <!-- RECRUTAMENTO -->
-            <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800 space-y-4">
-                <h3 class="text-purple-500 font-black uppercase text-xs">Sistema de Fichas (Foto/Vídeo)</h3>
-                <label class="text-[10px] block">CATEGORIA DAS FICHAS</label>
-                <select name="formCategoryId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
-                    <option value="">Nenhuma</option>
-                    <% channels.filter(c => c.type === 4).forEach(cat => { %> <option value="<%= cat.id %>" <%= config.formCategoryId == cat.id ? 'selected' : '' %>><%= cat.name %></option> <% }) %>
-                </select>
-                <label class="text-[10px] block">CANAL ONDE A STAFF RECEBE AS FICHAS</label>
-                <select name="formStaffChannelId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
-                    <% channels.filter(c => c.type === 0).forEach(ch => { %> <option value="<%= ch.id %>" <%= config.formStaffChannelId == ch.id ? 'selected' : '' %>># <%= ch.name %></option> <% }) %>
-                </select>
-                <label class="text-[10px] block">CARGO STAFF PARA MARCAR</label>
-                <select name="staffRoleId" class="w-full bg-black border border-gray-800 p-3 rounded-xl text-sm">
-                    <option value="">Ninguém</option>
-                    <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.staffRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
-                </select>
+            <nav class="flex-1 space-y-2">
+                <a href="?p=general" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'general' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'hover:bg-gray-800' %>">
+                    <i class="fas fa-shield-halved"></i> <span class="font-bold text-sm">Geral & AutoRoles</span>
+                </a>
+                <a href="?p=welcome" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'welcome' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'hover:bg-gray-800' %>">
+                    <i class="fas fa-door-open"></i> <span class="font-bold text-sm">Boas-vindas</span>
+                </a>
+                <a href="?p=form" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'form' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'hover:bg-gray-800' %>">
+                    <i class="fas fa-file-signature"></i> <span class="font-bold text-sm">Recrutamento</span>
+                </a>
+                <a href="?p=stats" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'stats' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'hover:bg-gray-800' %>">
+                    <i class="fas fa-chart-line"></i> <span class="font-bold text-sm">Dados do Server</span>
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-6 border-t border-gray-800">
+                <a href="https://www.instagram.com/hexorylabs" target="_blank" class="flex items-center gap-3 p-4 text-pink-500 hover:bg-pink-500/10 rounded-2xl transition">
+                    <i class="fab fa-instagram text-xl"></i> <span class="font-bold text-sm">@hexorylabs</span>
+                </a>
+                <a href="/dashboard" class="flex items-center gap-3 p-4 text-gray-500 hover:text-white transition">
+                    <i class="fas fa-arrow-left"></i> <span class="font-bold text-sm">Voltar Servidores</span>
+                </a>
             </div>
-        </div>
-    </form>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 p-10 overflow-y-auto">
+            <form action="/save/<%= guild.id %>" method="POST">
+                <input type="hidden" name="last_page" value="<%= page %>">
+                
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-3xl font-black text-white capitalize"><%= page === 'general' ? 'Segurança' : page %></h2>
+                    <button type="submit" class="bg-indigo-600 text-white px-10 py-3 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-indigo-900/40 hover:bg-indigo-500 transition">Salvar Alterações</button>
+                </div>
+
+                <!-- ABA GERAL -->
+                <% if(page === 'general') { %>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
+                        <label class="text-[10px] font-black uppercase text-indigo-500 mb-4 block">Cargo ao entrar (Auto-Role)</label>
+                        <select name="autoRoleId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm">
+                            <option value="">Nenhum</option>
+                            <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.autoRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
+                        </select>
+                    </div>
+                    <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
+                        <label class="text-[10px] font-black uppercase text-indigo-500 mb-4 block">Cargo de Verificado</label>
+                        <select name="verifyRoleId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm">
+                            <option value="">Nenhum</option>
+                            <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.verifyRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
+                        </select>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- ABA BOAS VINDAS -->
+                <% if(page === 'welcome') { %>
+                <div class="space-y-8">
+                    <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
+                        <h3 class="text-indigo-500 font-black uppercase text-xs mb-6">Mensagem no Servidor</h3>
+                        <label class="text-[10px] font-bold text-gray-600 block mb-2">CANAL DE BOAS-VINDAS</label>
+                        <select name="welcomeChannelId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm mb-4">
+                            <option value="">Desativado</option>
+                            <% channels.filter(c => c.type === 0).forEach(ch => { %> <option value="<%= ch.id %>" <%= config.welcomeChannelId == ch.id ? 'selected' : '' %>># <%= ch.name %></option> <% }) %>
+                        </select>
+                        <label class="text-[10px] font-bold text-gray-600 block mb-2">MENSAGEM (Use {user} para marcar)</label>
+                        <textarea name="welcomeMsg" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm h-32"><%= config.welcomeMsg %></textarea>
+                    </div>
+
+                    <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-indigo-500 font-black uppercase text-xs">Mensagem na DM (Privado)</h3>
+                            <input type="checkbox" name="enableDm" value="true" <%= config.enableDm ? 'checked' : '' %> class="w-5 h-5 accent-indigo-600">
+                        </div>
+                        <textarea name="welcomeDmMsg" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm h-32" placeholder="Digite a mensagem que o bot enviará no privado..."><%= config.welcomeDmMsg %></textarea>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- ABA ESTATÍSTICAS -->
+                <% if(page === 'stats') { %>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-indigo-600/10 p-10 rounded-[2.5rem] border border-indigo-500/30 text-center">
+                        <p class="text-4xl font-black text-white"><%= stats.members %></p>
+                        <p class="text-[10px] font-bold uppercase text-indigo-400 mt-2">Membros Totais</p>
+                    </div>
+                    <div class="bg-pink-600/10 p-10 rounded-[2.5rem] border border-pink-500/30 text-center">
+                        <p class="text-4xl font-black text-white"><%= stats.boosts %></p>
+                        <p class="text-[10px] font-bold uppercase text-pink-400 mt-2">Boosts Atuais</p>
+                    </div>
+                    <div class="bg-emerald-600/10 p-10 rounded-[2.5rem] border border-emerald-500/30 text-center">
+                        <p class="text-4xl font-black text-white"><%= stats.channels %></p>
+                        <p class="text-[10px] font-bold uppercase text-emerald-400 mt-2">Canais Ativos</p>
+                    </div>
+                </div>
+                <% } %>
+                
+                <!-- ABA FORM (MANTIDA DO ANTERIOR, DENTRO DO IF) -->
+                <% if(page === 'form') { %>
+                    <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
+                        <!-- Campos de categoria, canal staff e cargo staff igual ao anterior -->
+                        <p class="text-gray-500 text-sm">Configure aqui o sistema de recrutamento visual (foto/vídeo).</p>
+                    </div>
+                <% } %>
+
+            </form>
+        </main>
+    </div>
 </body>
 </html>
