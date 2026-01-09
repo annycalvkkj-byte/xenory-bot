@@ -2,10 +2,16 @@ const mongoose = require('mongoose');
 
 const GuildSchema = new mongoose.Schema({
     guildId: { type: String, required: true, unique: true },
-    // Segurança
-    autoRoleId: String,     // Cargo que ganha ao entrar
-    verifyRoleId: String,   // Cargo que ganha ao verificar (e remove o de cima)
+    isPlus: { type: Boolean, default: false },
+    // Segurança e Auto-Role
+    autoRoleId: String,
+    verifyRoleId: String,
     verifyChannelId: String,
+    // Boas-vindas Personalizadas
+    welcomeChannelId: String,
+    welcomeMsg: { type: String, default: 'Seja bem-vindo(a) ao servidor, {user}!' },
+    welcomeDmMsg: { type: String, default: 'Olá {user}, que bom ter você aqui!' },
+    enableDm: { type: Boolean, default: false },
     // Recrutamento
     formStaffChannelId: String,
     formCategoryId: String,
