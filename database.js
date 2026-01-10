@@ -15,18 +15,15 @@ const SheetsDB = {
         try {
             await doc.loadInfo();
             console.log(`✅ Planilha conectada: ${doc.title}`);
-        } catch (e) { 
-            console.error("❌ ERRO AO CONECTAR PLANILHA:", e.message);
-            console.log("DICA: Verifique se o e-mail da Service Account foi convidado como EDITOR na planilha.");
-        }
+        } catch (e) { console.error("❌ Erro de Conexão:", e.message); }
     },
+
     getConfig: async (guildId) => {
         try {
             const sheet = doc.sheetsByTitle['Configuracoes'];
             const rows = await sheet.getRows();
             const r = rows.find(row => row.get('guildId') === guildId);
             if (!r) return {};
-            
             return {
                 guildId: r.get('guildId'),
                 autoRoleId: r.get('autoRoleId'),
@@ -40,17 +37,16 @@ const SheetsDB = {
                 staffRoleId: r.get('staffRoleId'),
                 formTitle: r.get('formTitle')
             };
-        } catch (e) {
-            console.error("❌ ERRO AO LER CONFIG:", e.message);
-            return {};
-        }
+        } catch (e) { return {}; }
     },
+
     saveConfig: async (guildId, data) => {
         try {
             const sheet = doc.sheetsByTitle['Configuracoes'];
             const rows = await sheet.getRows();
             let r = rows.find(row => row.get('guildId') === guildId);
 
+            // Mapeamento exato dos nomes que vêm do formulário HTML
             const updateData = {
                 guildId: guildId,
                 autoRoleId: data.autoRoleId || '',
@@ -58,7 +54,7 @@ const SheetsDB = {
                 welcomeChannelId: data.welcomeChannelId || '',
                 welcomeMsg: data.welcomeMsg || '',
                 welcomeDmMsg: data.welcomeDmMsg || '',
-                enableDm: data.enableDm ? 'TRUE' : 'FALSE',
+                enableDm: data.enableDm ? 'TRUE' : 'FALSE', // Converte checkbox
                 formStaffChannelId: data.formStaffChannelId || '',
                 formCategoryId: data.formCategoryId || '',
                 staffRoleId: data.staffRoleId || '',
@@ -66,17 +62,14 @@ const SheetsDB = {
             };
 
             if (r) {
-                console.log(`📝 Atualizando servidor: ${guildId}`);
                 Object.assign(r, updateData);
                 await r.save();
+                console.log("✅ Planilha Atualizada!");
             } else {
-                console.log(`➕ Criando nova linha para servidor: ${guildId}`);
                 await sheet.addRow(updateData);
+                console.log("✅ Nova Linha Criada!");
             }
-            console.log("✨ Salvo com sucesso no Google Sheets!");
-        } catch (e) {
-            console.error("❌ ERRO AO SALVAR NA PLANILHA:", e.message);
-        }
+        } catch (e) { console.error("❌ Erro ao salvar:", e.message); }
     }
 };
 
