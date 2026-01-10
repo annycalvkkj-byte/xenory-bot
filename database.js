@@ -15,46 +15,68 @@ const SheetsDB = {
         try {
             await doc.loadInfo();
             console.log(`✅ Planilha conectada: ${doc.title}`);
-        } catch (e) { console.error("❌ Erro na Planilha: Verifique o ID e a permissão do e-mail da Service Account."); }
+        } catch (e) { 
+            console.error("❌ ERRO AO CONECTAR PLANILHA:", e.message);
+            console.log("DICA: Verifique se o e-mail da Service Account foi convidado como EDITOR na planilha.");
+        }
     },
     getConfig: async (guildId) => {
-        const sheet = doc.sheetsByTitle['Configuracoes'];
-        const rows = await sheet.getRows();
-        const r = rows.find(row => row.get('guildId') === guildId);
-        if (!r) return {};
-        return {
-            guildId: r.get('guildId'),
-            autoRoleId: r.get('autoRoleId'),
-            verifyRoleId: r.get('verifyRoleId'),
-            welcomeChannelId: r.get('welcomeChannelId'),
-            welcomeMsg: r.get('welcomeMsg'),
-            welcomeDmMsg: r.get('welcomeDmMsg'),
-            enableDm: r.get('enableDm') === 'TRUE',
-            formStaffChannelId: r.get('formStaffChannelId'),
-            formCategoryId: r.get('formCategoryId'),
-            staffRoleId: r.get('staffRoleId'),
-            formTitle: r.get('formTitle') || 'Recrutamento'
-        };
+        try {
+            const sheet = doc.sheetsByTitle['Configuracoes'];
+            const rows = await sheet.getRows();
+            const r = rows.find(row => row.get('guildId') === guildId);
+            if (!r) return {};
+            
+            return {
+                guildId: r.get('guildId'),
+                autoRoleId: r.get('autoRoleId'),
+                verifyRoleId: r.get('verifyRoleId'),
+                welcomeChannelId: r.get('welcomeChannelId'),
+                welcomeMsg: r.get('welcomeMsg'),
+                welcomeDmMsg: r.get('welcomeDmMsg'),
+                enableDm: r.get('enableDm') === 'TRUE',
+                formStaffChannelId: r.get('formStaffChannelId'),
+                formCategoryId: r.get('formCategoryId'),
+                staffRoleId: r.get('staffRoleId'),
+                formTitle: r.get('formTitle')
+            };
+        } catch (e) {
+            console.error("❌ ERRO AO LER CONFIG:", e.message);
+            return {};
+        }
     },
     saveConfig: async (guildId, data) => {
-        const sheet = doc.sheetsByTitle['Configuracoes'];
-        const rows = await sheet.getRows();
-        let r = rows.find(row => row.get('guildId') === guildId);
-        const d = {
-            guildId,
-            autoRoleId: data.autoRoleId || '',
-            verifyRoleId: data.verifyRoleId || '',
-            welcomeChannelId: data.welcomeChannelId || '',
-            welcomeMsg: data.welcomeMsg || '',
-            welcomeDmMsg: data.welcomeDmMsg || '',
-            enableDm: data.enableDm ? 'TRUE' : 'FALSE',
-            formStaffChannelId: data.formStaffChannelId || '',
-            formCategoryId: data.formCategoryId || '',
-            staffRoleId: data.staffRoleId || '',
-            formTitle: data.formTitle || 'Recrutamento'
-        };
-        if (r) { Object.assign(r, d); await r.save(); }
-        else { await sheet.addRow(d); }
+        try {
+            const sheet = doc.sheetsByTitle['Configuracoes'];
+            const rows = await sheet.getRows();
+            let r = rows.find(row => row.get('guildId') === guildId);
+
+            const updateData = {
+                guildId: guildId,
+                autoRoleId: data.autoRoleId || '',
+                verifyRoleId: data.verifyRoleId || '',
+                welcomeChannelId: data.welcomeChannelId || '',
+                welcomeMsg: data.welcomeMsg || '',
+                welcomeDmMsg: data.welcomeDmMsg || '',
+                enableDm: data.enableDm ? 'TRUE' : 'FALSE',
+                formStaffChannelId: data.formStaffChannelId || '',
+                formCategoryId: data.formCategoryId || '',
+                staffRoleId: data.staffRoleId || '',
+                formTitle: data.formTitle || 'Recrutamento'
+            };
+
+            if (r) {
+                console.log(`📝 Atualizando servidor: ${guildId}`);
+                Object.assign(r, updateData);
+                await r.save();
+            } else {
+                console.log(`➕ Criando nova linha para servidor: ${guildId}`);
+                await sheet.addRow(updateData);
+            }
+            console.log("✨ Salvo com sucesso no Google Sheets!");
+        } catch (e) {
+            console.error("❌ ERRO AO SALVAR NA PLANILHA:", e.message);
+        }
     }
 };
 
