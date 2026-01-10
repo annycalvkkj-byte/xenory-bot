@@ -1,4 +1,4 @@
-require('dotenv').config();
+try { require('dotenv').config(); } catch (e) {}
 const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType } = require('discord.js');
 const Koa = require('koa');
 const Router = require('koa-router');
@@ -6,36 +6,28 @@ const render = require('koa-ejs');
 const bodyParser = require('koa-bodyparser');
 const passport = require('koa-passport');
 const Strategy = require('passport-discord').Strategy;
-const mongoose = require('mongoose'); // Mantido apenas se houver dependência, mas usamos Sheets
 const SheetsDB = require('./database');
 const axios = require('axios');
 
-// --- CORREÇÃO CRÍTICA DO ERRO DE SESSÃO ---
+// Correção para o módulo de sessão
 let session = require('koa-session');
 if (typeof session !== 'function' && session.default) {
     session = session.default;
 }
 
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds, 
-        GatewayIntentBits.GuildMessages, 
-        GatewayIntentBits.MessageContent, 
-        GatewayIntentBits.GuildMembers, 
-        GatewayIntentBits.DirectMessages
-    ],
+    intents: [3276799], // Todos os Intents ativos
     partials: [Partials.Channel, Partials.Message, Partials.User]
 });
 
-// Conecta na Planilha
+// Inicializa Planilha Google
 SheetsDB.init();
 
 const app = new Koa();
 const router = new Router();
 
-// Ajustes para o Render
 app.proxy = true;
-app.keys = ['xenory_ultra_pro_secret_2026'];
+app.keys = ['xenory_pro_sheets_2026'];
 
 render(app, {
     root: __dirname,
@@ -44,7 +36,6 @@ render(app, {
     cache: false
 });
 
-// Configuração de Sessão Estável
 app.use(session({
     key: 'koa.sess',
     maxAge: 86400000,
@@ -68,22 +59,17 @@ passport.use(new Strategy({
     process.nextTick(() => done(null, profile));
 }));
 
-// --- LÓGICA DO BOT ---
+// --- LÓGICA DO BOT (GOOGLE SHEETS) ---
 
 client.on('guildMemberAdd', async (member) => {
     const config = await SheetsDB.getConfig(member.guild.id);
     if (!config) return;
-
     if (config.autoRoleId) member.roles.add(config.autoRoleId).catch(() => {});
-
     if (config.welcomeChannelId) {
         const chan = member.guild.channels.cache.get(config.welcomeChannelId);
         if (chan) chan.send(config.welcomeMsg.replace('{user}', `<@${member.id}>`)).catch(() => {});
     }
-
-    if (config.enableDm && config.welcomeDmMsg) {
-        member.send(config.welcomeDmMsg.replace('{user}', member.user.username)).catch(() => {});
-    }
+    if (config.enableDm) member.send(config.welcomeDmMsg.replace('{user}', member.user.username)).catch(() => {});
 });
 
 client.on('interactionCreate', async (int) => {
@@ -98,8 +84,6 @@ client.on('interactionCreate', async (int) => {
     }
 
     if (int.customId === 'xenory_start_form') {
-        if (!config.formStaffChannelId) return int.reply({ content: "❌ Recrutamento não configurado!", ephemeral: true });
-        
         try {
             const chan = await int.guild.channels.create({
                 name: `ficha-${int.user.username}`,
@@ -113,7 +97,7 @@ client.on('interactionCreate', async (int) => {
             await chan.send({ content: `${int.user}`, embeds: [new EmbedBuilder().setTitle("📸 Recrutamento").setDescription("Envie uma **FOTO ou VÍDEO** agora.").setColor("Purple")] });
             return int.reply({ content: `✅ Canal criado: ${chan}`, ephemeral: true });
         } catch (e) {
-            return int.reply({ content: "❌ Erro ao criar canal.", ephemeral: true });
+            return int.reply({ content: "❌ Erro ao criar canal. Verifique as permissões.", ephemeral: true });
         }
     }
 
@@ -126,7 +110,6 @@ client.on('interactionCreate', async (int) => {
     }
 });
 
-// Receber Fotos/Vídeos no Canal de Ficha
 client.on('messageCreate', async (msg) => {
     if (msg.author.bot || !msg.channel.name.startsWith('ficha-')) return;
     if (msg.attachments.size > 0) {
@@ -145,31 +128,13 @@ client.on('messageCreate', async (msg) => {
             await staffChan.send({ content: config.staffRoleId ? `<@&${config.staffRoleId}>` : "", embeds: [embed], components: [row] });
             if (file.contentType?.includes('video')) await staffChan.send({ content: `🎥 Vídeo: ${file.url}` });
             
-            await msg.channel.send("✅ Enviado para a Staff! O canal fechará em instantes.");
+            await msg.channel.send("✅ Enviado! Canal fechando...");
             setTimeout(() => msg.channel.delete().catch(() => {}), 4000);
         }
     }
 });
 
-// Comandos
-client.on('messageCreate', async (msg) => {
-    if (!msg.content.startsWith('/') || msg.author.bot || !msg.member?.permissions.has(PermissionFlagsBits.Administrator)) return;
-    const config = await SheetsDB.getConfig(msg.guild.id);
-    const cmd = msg.content.toLowerCase();
-
-    if (cmd === '/form') {
-        const e = new EmbedBuilder().setTitle(config.formTitle || "Recrutamento").setDescription("Clique abaixo para iniciar sua ficha.").setColor("Purple");
-        const r = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('xenory_start_form').setLabel('Iniciar').setStyle(ButtonStyle.Primary));
-        msg.channel.send({ embeds: [e], components: [r] });
-    }
-    if (cmd === '/verificar') {
-        const e = new EmbedBuilder().setTitle("🛡️ Verificação").setDescription("Clique para se verificar.").setColor("Blue");
-        const r = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('xenory_verify').setLabel('Verificar').setStyle(ButtonStyle.Success));
-        msg.channel.send({ embeds: [e], components: [r] });
-    }
-});
-
-// --- ROTAS WEB ---
+// --- ROTAS SITE ---
 
 router.get('/', async (ctx) => { await ctx.render('index'); });
 router.get('/login', passport.authenticate('discord'));
@@ -209,8 +174,8 @@ app.use(router.routes()).use(router.allowedMethods());
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 Xenory Pro On: ${PORT}`);
-    // Auto-Ping para o Render
+    console.log(`🚀 Xenory Pro (Sheets) Online: ${PORT}`);
+    // Auto-Ping
     setInterval(() => { axios.get(process.env.CALLBACK_URL.split('/auth')[0]).catch(() => {}); }, 600000);
 });
 
