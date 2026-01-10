@@ -1,144 +1,59 @@
-try { require('dotenv').config(); } catch (e) {}
+require('dotenv').config();
 const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType } = require('discord.js');
-const Koa = require('koa');
-const Router = require('koa-router');
-const render = require('koa-ejs');
-const bodyParser = require('koa-bodyparser');
-const passport = require('koa-passport');
+const express = require('express');
+const passport = require('passport');
+const session = require('express-session');
 const Strategy = require('passport-discord').Strategy;
 const axios = require('axios');
 const SheetsDB = require('./database');
-
-// Correção para o módulo de sessão
-let session = require('koa-session');
-if (typeof session !== 'function' && session.default) session = session.default;
 
 const client = new Client({
     intents: [3276799],
     partials: [Partials.Channel, Partials.Message, Partials.User]
 });
 
-const app = new Koa();
-const router = new Router();
+SheetsDB.init();
 
-// --- CONFIGURAÇÃO DE SEGURANÇA ---
-app.proxy = true;
-app.keys = ['xenory_ultra_stable_secret_2026'];
-
-render(app, {
-    root: __dirname,
-    layout: false,
-    viewExt: 'ejs',
-    cache: false
-});
-
-// Middleware para capturar erros e não deixar o site dar tela preta
-app.use(async (ctx, next) => {
-    try {
-        await next();
-    } catch (err) {
-        ctx.status = err.status || 500;
-        ctx.body = `⚠️ Erro Interno: ${err.message}`;
-        console.error("ERRO NO SITE:", err);
-    }
-});
+const app = express();
+app.set('trust proxy', 1);
+app.set('view engine', 'ejs');
+app.set('views', __dirname);
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.use(session({
-    key: 'xenory.sess',
-    maxAge: 86400000,
-    renew: true,
-    rolling: true,
-    secure: true,
-    sameSite: 'none'
-}, app));
+    secret: 'xenory_express_pro_2026',
+    resave: true,
+    saveUninitialized: true,
+    cookie: { secure: true, sameSite: 'none', maxAge: 86400000 }
+}));
 
-app.use(bodyParser());
 app.use(passport.initialize());
 app.use(passport.session());
 
 passport.serializeUser((u, d) => d(null, u));
 passport.deserializeUser((o, d) => d(null, o));
-
 passport.use(new Strategy({
-    clientID: process.env.CLIENT_ID,
-    clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: process.env.CALLBACK_URL,
-    scope: ['identify', 'guilds']
+    clientID: process.env.CLIENT_ID, clientSecret: process.env.CLIENT_SECRET,
+    callbackURL: process.env.CALLBACK_URL, scope: ['identify', 'guilds']
 }, (at, rt, profile, done) => done(null, profile)));
 
-// --- ROTAS ---
-
-router.get('/', async (ctx) => {
-    await ctx.render('index');
-});
-
-router.get('/login', passport.authenticate('discord'));
-
-router.get('/auth/discord/callback', async (ctx, next) => {
-    return passport.authenticate('discord', async (err, user) => {
-        if (err || !user) return ctx.redirect('/login');
-        await ctx.login(user);
-        ctx.session.save();
-        ctx.redirect('/dashboard');
-    })(ctx, next);
-});
-
-router.get('/dashboard', async (ctx) => {
-    if (!ctx.isAuthenticated()) return ctx.redirect('/login');
-    const guilds = ctx.state.user.guilds.filter(g => (g.permissions & 0x8) === 0x8);
-    await ctx.render('dashboard', { guilds });
-});
-
-router.get('/config/:id', async (ctx) => {
-    if (!ctx.isAuthenticated()) return ctx.redirect('/login');
-    const guild = await client.guilds.fetch(ctx.params.id).catch(() => null);
-    if (!guild) return ctx.body = "Bot não está no servidor!";
-    
-    // Tenta pegar config do Sheets, se falhar, manda vazio
-    let config = {};
-    try {
-        config = await SheetsDB.getConfig(ctx.params.id);
-    } catch (e) {
-        console.log("Aba Configuracoes não encontrada ou erro no ID da planilha.");
-    }
-
-    const stats = { members: guild.memberCount, boosts: guild.premiumSubscriptionCount, channels: guild.channels.cache.size };
-    
-    await ctx.render('config', { 
-        guild, config, stats,
-        channels: guild.channels.cache, 
-        roles: guild.roles.cache,
-        page: ctx.query.p || 'general' 
-    });
-});
-
-router.post('/save/:id', async (ctx) => {
-    if (!ctx.isAuthenticated()) return ctx.status = 401;
-    await SheetsDB.saveConfig(ctx.params.id, ctx.request.body);
-    ctx.session.save();
-    ctx.redirect(`/config/${ctx.params.id}?p=${ctx.request.body.last_page}`);
-});
-
-// --- LÓGICA DO BOT (AUTO-ROLE, VERIFICAÇÃO, FICHA) ---
-
+// --- BOT LOGIC ---
 client.on('guildMemberAdd', async (member) => {
-    try {
-        const config = await SheetsDB.getConfig(member.guild.id);
-        if (config.autoRoleId) await member.roles.add(config.autoRoleId).catch(() => {});
-        if (config.welcomeChannelId) {
-            const chan = member.guild.channels.cache.get(config.welcomeChannelId);
-            if (chan) chan.send(config.welcomeMsg.replace('{user}', `<@${member.id}>`)).catch(() => {});
-        }
-        if (config.enableDm) await member.send(config.welcomeDmMsg.replace('{user}', member.user.username)).catch(() => {});
-    } catch (e) {}
+    const config = await SheetsDB.getConfig(member.guild.id);
+    if (config.autoRoleId) member.roles.add(config.autoRoleId).catch(() => {});
+    if (config.welcomeChannelId) {
+        const chan = member.guild.channels.cache.get(config.welcomeChannelId);
+        if (chan) chan.send(config.welcomeMsg.replace('{user}', `<@${member.id}>`));
+    }
+    if (config.enableDm) member.send(config.welcomeDmMsg.replace('{user}', member.user.username)).catch(() => {});
 });
 
 client.on('interactionCreate', async (int) => {
     if (!int.guild) return;
-    const config = await SheetsDB.getConfig(int.guild.id).catch(() => ({}));
+    const config = await SheetsDB.getConfig(int.guild.id);
 
     if (int.customId === 'xenory_verify') {
-        if (!config.verifyRoleId) return int.reply({ content: "Configuração faltando.", ephemeral: true });
         await int.member.roles.add(config.verifyRoleId).catch(() => {});
         if (config.autoRoleId) await int.member.roles.remove(config.autoRoleId).catch(() => {});
         return int.reply({ content: "✅ Verificado!", ephemeral: true });
@@ -146,16 +61,11 @@ client.on('interactionCreate', async (int) => {
 
     if (int.customId === 'xenory_start_form') {
         const chan = await int.guild.channels.create({
-            name: `ficha-${int.user.username}`,
-            type: ChannelType.GuildText,
-            parent: config.formCategoryId || null,
-            permissionOverwrites: [
-                { id: int.guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-                { id: int.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles] }
-            ]
+            name: `ficha-${int.user.username}`, type: ChannelType.GuildText, parent: config.formCategoryId || null,
+            permissionOverwrites: [{ id: int.guild.id, deny: [8n] }, { id: int.user.id, allow: [1024n, 2048n, 32768n] }]
         });
-        await chan.send({ content: `${int.user}`, embeds: [new EmbedBuilder().setTitle("📸 Envio de Mídia").setDescription("Envie foto/vídeo agora.").setColor("Purple")] });
-        return int.reply({ content: `✅ Canal: ${chan}`, ephemeral: true });
+        await chan.send({ content: `${int.user}`, embeds: [new EmbedBuilder().setTitle("📸 Envio de Mídia").setDescription("Mande foto/vídeo agora.").setColor("Purple")] });
+        return int.reply({ content: "Canal criado!", ephemeral: true });
     }
 
     if (int.customId.startsWith('staff_app_') || int.customId.startsWith('staff_rej_')) {
@@ -170,11 +80,11 @@ client.on('interactionCreate', async (int) => {
 client.on('messageCreate', async (msg) => {
     if (msg.author.bot || !msg.channel.name.startsWith('ficha-')) return;
     if (msg.attachments.size > 0) {
-        const config = await SheetsDB.getConfig(msg.guild.id).catch(() => ({}));
+        const config = await SheetsDB.getConfig(msg.guild.id);
         const staff = msg.guild.channels.cache.get(config.formStaffChannelId);
         if (staff) {
             const file = msg.attachments.first();
-            const embed = new EmbedBuilder().setTitle("📋 FICHA RECEBIDA").addFields({name: "Candidato", value: msg.author.tag}).setColor("Orange");
+            const embed = new EmbedBuilder().setTitle("📋 NOVA FICHA").addFields({name: "Candidato", value: msg.author.tag}).setColor("Orange");
             if (!file.contentType?.includes('video')) embed.setImage(file.url);
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId(`staff_app_${msg.author.id}`).setLabel("Aceitar").setStyle(ButtonStyle.Success),
@@ -182,19 +92,59 @@ client.on('messageCreate', async (msg) => {
             );
             await staff.send({ content: config.staffRoleId ? `<@&${config.staffRoleId}>` : "", embeds: [embed], components: [row] });
             if (file.contentType?.includes('video')) await staff.send({ content: `🎥 Vídeo: ${file.url}` });
-            await msg.channel.send("✅ Enviado! Fechando canal...");
+            await msg.channel.send("✅ Enviado!");
             setTimeout(() => msg.channel.delete(), 3000);
         }
     }
 });
 
-app.use(router.routes()).use(router.allowedMethods());
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-    console.log(`🚀 Xenory Pro Online: ${PORT}`);
-    await SheetsDB.init(); // Conecta na planilha ao ligar
-    setInterval(() => { axios.get(process.env.CALLBACK_URL.split('/auth')[0]).catch(() => {}); }, 600000);
+// Comandos
+client.on('messageCreate', async (msg) => {
+    if (!msg.content.startsWith('/') || msg.author.bot || !msg.member?.permissions.has(PermissionFlagsBits.Administrator)) return;
+    const config = await SheetsDB.getConfig(msg.guild.id);
+    if (msg.content.toLowerCase() === '/form') {
+        const e = new EmbedBuilder().setTitle(config.formTitle || "Recrutamento").setDescription("Clique abaixo.").setColor("Purple");
+        const r = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('xenory_start_form').setLabel('Iniciar').setStyle(ButtonStyle.Primary));
+        msg.channel.send({ embeds: [e], components: [r] });
+    }
+    if (msg.content.toLowerCase() === '/verificar') {
+        const e = new EmbedBuilder().setTitle("🛡️ Verificação").setDescription("Clique abaixo.").setColor("Blue");
+        const r = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('xenory_verify').setLabel('Verificar').setStyle(ButtonStyle.Success));
+        msg.channel.send({ embeds: [e], components: [r] });
+    }
 });
 
+// --- ROTAS SITE ---
+app.get('/', (req, res) => res.render('index'));
+app.get('/login', passport.authenticate('discord'));
+app.get('/auth/discord/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => {
+    req.session.save(() => res.redirect('/dashboard'));
+});
+
+app.get('/dashboard', async (req, res) => {
+    if (!req.isAuthenticated()) return res.redirect('/login');
+    res.render('dashboard', { guilds: req.user.guilds.filter(g => (g.permissions & 0x8) === 0x8) });
+});
+
+app.get('/config/:id', async (req, res) => {
+    if (!req.isAuthenticated()) return res.redirect('/login');
+    const guild = await client.guilds.fetch(req.params.id).catch(() => null);
+    const config = await SheetsDB.getConfig(req.params.id);
+    res.render('config', { 
+        guild, config, page: req.query.p || 'general',
+        channels: guild.channels.cache, roles: guild.roles.cache,
+        stats: { members: guild.memberCount, boosts: guild.premiumSubscriptionCount, channels: guild.channels.cache.size }
+    });
+});
+
+app.post('/save/:id', async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    await SheetsDB.saveConfig(req.params.id, req.body);
+    req.session.save(() => res.redirect(`/config/${req.params.id}?p=${req.body.last_page}`));
+});
+
+app.listen(process.env.PORT || 3000, () => {
+    console.log("🚀 Xenory Pro On (Express)");
+    setInterval(() => { axios.get(process.env.CALLBACK_URL.split('/auth')[0]).catch(() => {}); }, 600000);
+});
 client.login(process.env.TOKEN);
