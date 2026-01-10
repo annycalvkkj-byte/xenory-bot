@@ -1,18 +1,20 @@
 {
-  "name": "xenory-sheets",
-  "version": "4.0.0",
+  "name": "xenory-pro-sheets",
+  "version": "5.0.0",
   "main": "app.js",
   "scripts": { "start": "node app.js" },
   "dependencies": {
-    "discord.js": "^14.14.1",
-    "dotenv": "^16.4.1",
-    "express": "^4.18.2",
-    "express-session": "^1.18.0",
-    "ejs": "^3.1.9",
-    "google-spreadsheet": "^4.1.1",
-    "google-auth-library": "^9.6.3",
-    "passport": "^0.7.0",
-    "passport-discord": "^0.1.4",
-    "axios": "^1.6.7"
+    "discord.js": "latest",
+    "dotenv": "latest",
+    "koa": "latest",
+    "koa-router": "latest",
+    "koa-ejs": "latest",
+    "koa-bodyparser": "latest",
+    "koa-session": "latest",
+    "koa-passport": "latest",
+    "passport-discord": "latest",
+    "google-spreadsheet": "latest",
+    "google-auth-library": "latest",
+    "axios": "latest"
   }
 }
