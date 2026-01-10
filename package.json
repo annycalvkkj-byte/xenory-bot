@@ -1,8 +1,10 @@
 {
-  "name": "xenory-pro-sheets",
-  "version": "5.0.0",
+  "name": "xenory-koa-sheets",
+  "version": "5.1.0",
   "main": "app.js",
-  "scripts": { "start": "node app.js" },
+  "scripts": {
+    "start": "node app.js"
+  },
   "dependencies": {
     "discord.js": "latest",
     "dotenv": "latest",
