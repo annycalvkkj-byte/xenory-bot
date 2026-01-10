@@ -15,7 +15,7 @@ const SheetsDB = {
         try {
             await doc.loadInfo();
             console.log(`✅ Planilha conectada: ${doc.title}`);
-        } catch (e) { console.error("❌ Erro no ID da Planilha ou Permissão!"); }
+        } catch (e) { console.error("❌ Erro na Planilha: Verifique o ID e a permissão do e-mail da Service Account."); }
     },
     getConfig: async (guildId) => {
         const sheet = doc.sheetsByTitle['Configuracoes'];
@@ -33,7 +33,7 @@ const SheetsDB = {
             formStaffChannelId: r.get('formStaffChannelId'),
             formCategoryId: r.get('formCategoryId'),
             staffRoleId: r.get('staffRoleId'),
-            formTitle: r.get('formTitle')
+            formTitle: r.get('formTitle') || 'Recrutamento'
         };
     },
     saveConfig: async (guildId, data) => {
