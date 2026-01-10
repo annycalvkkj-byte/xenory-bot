@@ -3,24 +3,24 @@
 <head>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <title>Xenory Pro | Google Sheets</title>
+    <title>Xenory Pro</title>
 </head>
 <body class="bg-[#0b0e14] text-gray-300 font-sans overflow-hidden">
     <div class="flex h-screen">
-        <!-- SIDEBAR -->
         <aside class="w-72 bg-[#12151d] border-r border-gray-800 flex flex-col p-6">
-            <div class="mb-10 text-center">
-                <h1 class="text-2xl font-black italic text-indigo-500 tracking-tighter">XENORY <span class="text-white">PRO</span></h1>
-            </div>
+            <h1 class="text-2xl font-black italic text-indigo-500 mb-10">XENORY <span class="text-white">PRO</span></h1>
             <nav class="flex-1 space-y-2">
                 <a href="?p=general" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'general' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-800' %>">
-                    <i class="fas fa-shield-halved"></i> <span class="font-bold text-sm">Cargos & Segurança</span>
+                    <i class="fas fa-shield-halved"></i> <span class="font-bold text-sm">Segurança</span>
+                </a>
+                <a href="?p=welcome" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'welcome' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-800' %>">
+                    <i class="fas fa-door-open"></i> <span class="font-bold text-sm">Boas-vindas</span>
                 </a>
                 <a href="?p=form" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'form' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-800' %>">
                     <i class="fas fa-file-signature"></i> <span class="font-bold text-sm">Recrutamento</span>
                 </a>
-                <a href="?p=personality" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'personality' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-800' %>">
-                    <i class="fas fa-brain"></i> <span class="font-bold text-sm">Personalidade Bot</span>
+                <a href="?p=stats" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'stats' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-800' %>">
+                    <i class="fas fa-chart-line"></i> <span class="font-bold text-sm">Dados</span>
                 </a>
             </nav>
             <div class="mt-auto pt-6 border-t border-gray-800">
@@ -30,32 +30,77 @@
             </div>
         </aside>
 
-        <!-- MAIN -->
         <main class="flex-1 p-12 overflow-y-auto">
             <form action="/save/<%= guild.id %>" method="POST">
                 <input type="hidden" name="last_page" value="<%= page %>">
                 <div class="flex justify-between items-center mb-10">
                     <h2 class="text-3xl font-black text-white capitalize"><%= page %></h2>
-                    <button type="submit" class="bg-indigo-600 text-white px-10 py-3 rounded-2xl font-black uppercase text-[10px]">Salvar na Planilha</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold uppercase text-[10px]">Salvar</button>
                 </div>
 
-                <!-- ABA PERSONALIDADE -->
-                <% if(page === 'personality') { %>
-                <div class="bg-[#12151d] p-8 rounded-[2.5rem] border border-gray-800">
-                    <label class="text-[10px] font-bold text-gray-600 block mb-2 uppercase">Defina a Personalidade (Atualiza no Google Sheets)</label>
-                    <textarea name="personalidade" class="w-full bg-black border border-gray-800 p-5 rounded-2xl outline-none text-sm h-48 focus:border-indigo-600 transition"><%= config.personalidade %></textarea>
-                </div>
-                <% } %>
-
-                <!-- ABA GERAL -->
                 <% if(page === 'general') { %>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
-                        <label class="text-[10px] font-bold text-gray-600 block mb-2">CARGO AO ENTRAR</label>
-                        <select name="autoRoleId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm">
+                <div class="grid gap-6">
+                    <div class="bg-[#12151d] p-8 rounded-3xl border border-gray-800">
+                        <label class="text-[10px] font-bold text-gray-500 block mb-2 uppercase">Cargo ao Entrar</label>
+                        <select name="autoRoleId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none">
                             <option value="">Nenhum</option>
                             <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.autoRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
                         </select>
+                    </div>
+                    <div class="bg-[#12151d] p-8 rounded-3xl border border-gray-800">
+                        <label class="text-[10px] font-bold text-gray-500 block mb-2 uppercase">Cargo de Verificado</label>
+                        <select name="verifyRoleId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none">
+                            <option value="">Nenhum</option>
+                            <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.verifyRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
+                        </select>
+                    </div>
+                </div>
+                <% } %>
+
+                <% if(page === 'welcome') { %>
+                <div class="space-y-6">
+                    <div class="bg-[#12151d] p-8 rounded-3xl border border-gray-800">
+                        <label class="text-[10px] font-bold text-gray-500 block mb-2 uppercase">Canal de Boas-vindas</label>
+                        <select name="welcomeChannelId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none">
+                            <option value="">Desativado</option>
+                            <% channels.filter(c => c.type === 0).forEach(ch => { %> <option value="<%= ch.id %>" <%= config.welcomeChannelId == ch.id ? 'selected' : '' %>># <%= ch.name %></option> <% }) %>
+                        </select>
+                        <label class="text-[10px] font-bold text-gray-500 block mt-6 mb-2 uppercase">Mensagem (Use {user})</label>
+                        <textarea name="welcomeMsg" class="w-full bg-black border border-gray-800 p-4 rounded-xl h-32 outline-none"><%= config.welcomeMsg %></textarea>
+                    </div>
+                    <div class="bg-[#12151d] p-8 rounded-3xl border border-gray-800 flex justify-between items-center">
+                        <span class="text-sm font-bold">Ativar mensagem na DM?</span>
+                        <input type="checkbox" name="enableDm" value="true" <%= config.enableDm ? 'checked' : '' %> class="w-6 h-6 accent-indigo-600">
+                    </div>
+                </div>
+                <% } %>
+
+                <% if(page === 'form') { %>
+                <div class="grid gap-6">
+                    <div class="bg-[#12151d] p-8 rounded-3xl border border-gray-800">
+                        <label class="text-[10px] font-bold text-gray-500 block mb-2 uppercase">Canal Staff (Log)</label>
+                        <select name="formStaffChannelId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none">
+                            <% channels.filter(c => c.type === 0).forEach(ch => { %> <option value="<%= ch.id %>" <%= config.formStaffChannelId == ch.id ? 'selected' : '' %>># <%= ch.name %></option> <% }) %>
+                        </select>
+                    </div>
+                    <div class="bg-[#12151d] p-8 rounded-3xl border border-gray-800">
+                        <label class="text-[10px] font-bold text-gray-500 block mb-2 uppercase">Categoria das Fichas</label>
+                        <select name="formCategoryId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none">
+                            <% channels.filter(c => c.type === 4).forEach(cat => { %> <option value="<%= cat.id %>" <%= config.formCategoryId == cat.id ? 'selected' : '' %>><%= cat.name %></option> <% }) %>
+                        </select>
+                    </div>
+                </div>
+                <% } %>
+
+                <% if(page === 'stats') { %>
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="bg-indigo-600/10 p-10 rounded-3xl border border-indigo-500/20 text-center">
+                        <p class="text-4xl font-black text-white"><%= stats.members %></p>
+                        <p class="text-[10px] font-bold uppercase text-indigo-400 mt-2">Membros</p>
+                    </div>
+                    <div class="bg-pink-600/10 p-10 rounded-3xl border border-pink-500/20 text-center">
+                        <p class="text-4xl font-black text-white"><%= stats.boosts %></p>
+                        <p class="text-[10px] font-bold uppercase text-pink-400 mt-2">Boosts</p>
                     </div>
                 </div>
                 <% } %>
