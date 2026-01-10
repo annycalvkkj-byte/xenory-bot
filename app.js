@@ -100,17 +100,24 @@ app.get('/config/:id', async (req, res) => {
     });
 });
 
+// ... (resto do topo igual)
+
 app.post('/save/:id', async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
-    // Salva na planilha e espera terminar
-    await SheetsDB.saveConfig(req.params.id, req.body);
+    // Pega o ID do servidor
+    const guildId = req.params.id;
     
-    // Força salvar sessão e volta para a mesma página
+    // SALVA TUDO QUE VEIO DO FORMULÁRIO NA PLANILHA
+    await SheetsDB.saveConfig(guildId, req.body);
+    
+    // Força o salvamento da sessão e volta para a página que o usuário estava
     req.session.save(() => {
-        res.redirect(`/config/${req.params.id}?p=${req.body.last_page || 'general'}`);
+        res.redirect(`/config/${guildId}?p=${req.body.last_page || 'general'}`);
     });
 });
+
+// ... (resto do bot igual)
 
 // --- LÓGICA DO BOT ( SheetsDB ) ---
 
