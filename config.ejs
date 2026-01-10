@@ -3,7 +3,7 @@
 <head>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <title>Xenory Bot</title>
+    <title>Xenory Pro</title>
 </head>
 <body class="bg-[#0b0e14] text-gray-300 font-sans overflow-hidden text-sm">
     <div class="flex h-screen">
@@ -24,7 +24,6 @@
                     <i class="fas fa-chart-line w-5"></i> <span class="font-bold">Dados do Server</span>
                 </a>
             </nav>
-            <!-- INSTAGRAM -->
             <div class="mt-auto pt-6 border-t border-gray-800">
                 <a href="https://www.instagram.com/hexorylabs" target="_blank" class="flex items-center gap-3 p-4 text-pink-500 hover:bg-pink-500/10 rounded-2xl transition">
                     <i class="fab fa-instagram text-xl"></i> <span class="font-bold italic">@hexorylabs</span>
@@ -37,14 +36,16 @@
             <form action="/save/<%= guild.id %>" method="POST">
                 <input type="hidden" name="last_page" value="<%= page %>">
                 <div class="flex justify-between items-center mb-10">
-                    <h2 class="text-3xl font-black text-white capitalize tracking-tight"><%= page === 'general' ? 'Segurança e Cargos' : page %></h2>
+                    <h2 class="text-3xl font-black text-white capitalize tracking-tight">
+                        <% if(page === 'general') { %>Segurança<% } else if(page === 'welcome') { %>Boas-vindas<% } else if(page === 'form') { %>Recrutamento<% } else { %>Estatísticas<% } %>
+                    </h2>
                     <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-indigo-900/40 transition">Salvar Alterações</button>
                 </div>
 
                 <% if(page === 'general') { %>
-                <div class="grid grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
-                        <label class="text-[10px] font-bold text-gray-500 block mb-4 uppercase">Cargo de Auto-Role (Ao entrar)</label>
+                        <label class="text-[10px] font-bold text-gray-500 block mb-4 uppercase">Cargo ao Entrar (Auto-Role)</label>
                         <select name="autoRoleId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none">
                             <option value="">Nenhum</option>
                             <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.autoRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
@@ -68,25 +69,25 @@
                             <option value="">Desativado</option>
                             <% channels.filter(c => c.type === 0).forEach(ch => { %> <option value="<%= ch.id %>" <%= config.welcomeChannelId == ch.id ? 'selected' : '' %>># <%= ch.name %></option> <% }) %>
                         </select>
-                        <label class="text-[10px] font-bold text-gray-500 block mt-6 mb-4 uppercase">Mensagem no Servidor ({user})</label>
+                        <label class="text-[10px] font-bold text-gray-500 block mt-6 mb-4 uppercase">Mensagem no Servidor (Use {user})</label>
                         <textarea name="welcomeMsg" class="w-full bg-black border border-gray-800 p-4 rounded-xl h-32 outline-none"><%= config.welcomeMsg %></textarea>
                     </div>
                     <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
-                         <div class="flex justify-between items-center mb-4">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase">Mensagem na DM?</label>
-                            <input type="checkbox" name="enableDm" value="true" <%= config.enableDm ? 'checked' : '' %> class="w-6 h-6 accent-indigo-600">
-                         </div>
-                         <textarea name="welcomeDmMsg" class="w-full bg-black border border-gray-800 p-4 rounded-xl h-32 outline-none"><%= config.welcomeDmMsg %></textarea>
+                        <div class="flex justify-between items-center mb-4">
+                           <label class="text-[10px] font-bold text-gray-500 uppercase">Habilitar Mensagem na DM?</label>
+                           <input type="checkbox" name="enableDm" value="true" <%= config.enableDm ? 'checked' : '' %> class="w-6 h-6 accent-indigo-600">
+                        </div>
+                        <textarea name="welcomeDmMsg" class="w-full bg-black border border-gray-800 p-4 rounded-xl h-32 outline-none"><%= config.welcomeDmMsg %></textarea>
                     </div>
                 </div>
                 <% } %>
 
                 <% if(page === 'form') { %>
-                <div class="grid grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
-                        <label class="text-[10px] font-bold text-gray-500 block mb-4 uppercase">Canal Staff (Onde recebe foto/vídeo)</label>
+                        <label class="text-[10px] font-bold text-gray-500 block mb-4 uppercase">Canal Staff (Recebe Foto/Vídeo)</label>
                         <select name="formStaffChannelId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none">
-                            <option value="">Selecione...</option>
+                            <option value="">Selecione um canal...</option>
                             <% channels.filter(c => c.type === 0).forEach(ch => { %> <option value="<%= ch.id %>" <%= config.formStaffChannelId == ch.id ? 'selected' : '' %>># <%= ch.name %></option> <% }) %>
                         </select>
                     </div>
@@ -97,11 +98,22 @@
                             <% channels.filter(c => c.type === 4).forEach(cat => { %> <option value="<%= cat.id %>" <%= config.formCategoryId == cat.id ? 'selected' : '' %>><%= cat.name %></option> <% }) %>
                         </select>
                     </div>
+                    <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
+                        <label class="text-[10px] font-bold text-gray-500 block mb-4 uppercase">Cargo Staff para Marcar</label>
+                        <select name="staffRoleId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none">
+                            <option value="">Ninguém</option>
+                            <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.staffRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
+                        </select>
+                    </div>
+                    <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
+                        <label class="text-[10px] font-bold text-gray-500 block mb-4 uppercase">Título da Ficha</label>
+                        <input type="text" name="formTitle" value="<%= config.formTitle %>" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none">
+                    </div>
                 </div>
                 <% } %>
 
                 <% if(page === 'stats') { %>
-                <div class="grid grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-indigo-600/10 p-10 rounded-[2.5rem] border border-indigo-500/20 text-center">
                         <p class="text-4xl font-black text-white tracking-tighter"><%= stats.members %></p>
                         <p class="text-[10px] font-bold uppercase text-indigo-400 mt-2 tracking-widest">Membros</p>
