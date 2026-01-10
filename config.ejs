@@ -1,225 +1,64 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <title>Xenory Labs | Painel Pro</title>
-    <style>
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0b0e14; }
-        ::-webkit-scrollbar-thumb { background: #1e222c; border-radius: 10px; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-    </style>
+    <title>Xenory Pro | Google Sheets</title>
 </head>
-<body class="bg-[#0b0e14] text-gray-300 font-sans antialiased overflow-hidden">
+<body class="bg-[#0b0e14] text-gray-300 font-sans overflow-hidden">
     <div class="flex h-screen">
-        
-        <!-- SIDEBAR LATERAL -->
+        <!-- SIDEBAR -->
         <aside class="w-72 bg-[#12151d] border-r border-gray-800 flex flex-col p-6">
-            <div class="mb-10 flex items-center gap-3 px-2">
-                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-900/20">
-                    <i class="fas fa-robot text-white text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-black italic text-white tracking-tighter">XENORY <span class="text-indigo-500">PRO</span></h1>
-                    <p class="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em]">Hexory Labs • Community</p>
-                </div>
+            <div class="mb-10 text-center">
+                <h1 class="text-2xl font-black italic text-indigo-500 tracking-tighter">XENORY <span class="text-white">PRO</span></h1>
             </div>
-
             <nav class="flex-1 space-y-2">
-                <a href="?p=general" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'general' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'hover:bg-gray-800/50' %>">
-                    <i class="fas fa-shield-halved w-5"></i> <span class="font-bold text-sm">Geral & AutoRoles</span>
+                <a href="?p=general" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'general' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-800' %>">
+                    <i class="fas fa-shield-halved"></i> <span class="font-bold text-sm">Cargos & Segurança</span>
                 </a>
-                <a href="?p=welcome" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'welcome' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'hover:bg-gray-800/50' %>">
-                    <i class="fas fa-door-open w-5"></i> <span class="font-bold text-sm">Boas-vindas</span>
+                <a href="?p=form" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'form' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-800' %>">
+                    <i class="fas fa-file-signature"></i> <span class="font-bold text-sm">Recrutamento</span>
                 </a>
-                <a href="?p=form" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'form' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'hover:bg-gray-800/50' %>">
-                    <i class="fas fa-file-signature w-5"></i> <span class="font-bold text-sm">Recrutamento</span>
-                </a>
-                <a href="?p=stats" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'stats' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'hover:bg-gray-800/50' %>">
-                    <i class="fas fa-chart-line w-5"></i> <span class="font-bold text-sm">Dados do Server</span>
+                <a href="?p=personality" class="flex items-center gap-3 p-4 rounded-2xl transition <%= page === 'personality' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-800' %>">
+                    <i class="fas fa-brain"></i> <span class="font-bold text-sm">Personalidade Bot</span>
                 </a>
             </nav>
-
-            <!-- RODAPÉ DA SIDEBAR -->
-            <div class="mt-auto pt-6 border-t border-gray-800 space-y-1">
-                <a href="https://www.instagram.com/hexorylabs" target="_blank" class="flex items-center gap-3 p-4 text-pink-500 hover:bg-pink-500/10 rounded-2xl transition group">
-                    <i class="fab fa-instagram text-xl group-hover:scale-110 transition"></i> 
-                    <span class="font-bold text-sm">@hexorylabs</span>
-                </a>
-                <a href="/dashboard" class="flex items-center gap-3 p-4 text-gray-500 hover:text-white transition">
-                    <i class="fas fa-arrow-left w-5"></i> <span class="font-bold text-sm text-xs">Sair do Painel</span>
+            <div class="mt-auto pt-6 border-t border-gray-800">
+                <a href="https://www.instagram.com/hexorylabs" target="_blank" class="flex items-center gap-3 p-4 text-pink-500 hover:bg-pink-500/10 rounded-2xl transition">
+                    <i class="fab fa-instagram text-xl"></i> <span class="font-bold text-sm">@hexorylabs</span>
                 </a>
             </div>
         </aside>
 
-        <!-- CONTEÚDO PRINCIPAL -->
-        <main class="flex-1 p-8 md:p-12 overflow-y-auto">
-            <form action="/save/<%= guild.id %>" method="POST" class="max-w-5xl mx-auto">
+        <!-- MAIN -->
+        <main class="flex-1 p-12 overflow-y-auto">
+            <form action="/save/<%= guild.id %>" method="POST">
                 <input type="hidden" name="last_page" value="<%= page %>">
-                
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-                    <div>
-                        <h2 class="text-3xl font-black text-white tracking-tight">
-                            <% if(page === 'general') { %>Segurança e Cargos<% } %>
-                            <% if(page === 'welcome') { %>Sistema de Boas-vindas<% } %>
-                            <% if(page === 'form') { %>Configuração de Recrutamento<% } %>
-                            <% if(page === 'stats') { %>Estatísticas do Servidor<% } %>
-                        </h2>
-                        <p class="text-gray-500 text-sm mt-1">Configurando agora: <span class="text-indigo-400 font-bold"><%= guild.name %></span></p>
-                    </div>
-                    <button type="submit" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-indigo-900/30 transition-all hover:-translate-y-1 active:translate-y-0">
-                        Salvar Alterações
-                    </button>
+                <div class="flex justify-between items-center mb-10">
+                    <h2 class="text-3xl font-black text-white capitalize"><%= page %></h2>
+                    <button type="submit" class="bg-indigo-600 text-white px-10 py-3 rounded-2xl font-black uppercase text-[10px]">Salvar na Planilha</button>
                 </div>
 
-                <!-- CONTEÚDO DAS ABAS -->
+                <!-- ABA PERSONALIDADE -->
+                <% if(page === 'personality') { %>
+                <div class="bg-[#12151d] p-8 rounded-[2.5rem] border border-gray-800">
+                    <label class="text-[10px] font-bold text-gray-600 block mb-2 uppercase">Defina a Personalidade (Atualiza no Google Sheets)</label>
+                    <textarea name="personalidade" class="w-full bg-black border border-gray-800 p-5 rounded-2xl outline-none text-sm h-48 focus:border-indigo-600 transition"><%= config.personalidade %></textarea>
+                </div>
+                <% } %>
 
-                <!-- ABA: GERAL -->
+                <!-- ABA GERAL -->
                 <% if(page === 'general') { %>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div class="bg-[#12151d] p-8 rounded-[2.5rem] border border-gray-800 space-y-6">
-                        <h3 class="text-xs font-black uppercase tracking-widest text-indigo-500 italic">Auto-Role de Entrada</h3>
-                        <div>
-                            <label class="text-[10px] font-bold text-gray-600 uppercase mb-2 block">Cargo que o membro ganha ao entrar</label>
-                            <select name="autoRoleId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm focus:border-indigo-600 transition">
-                                <option value="">Nenhum cargo</option>
-                                <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.autoRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="bg-[#12151d] p-8 rounded-[2.5rem] border border-gray-800 space-y-6">
-                        <h3 class="text-xs font-black uppercase tracking-widest text-indigo-500 italic">Verificação Simples</h3>
-                        <div>
-                            <label class="text-[10px] font-bold text-gray-600 uppercase mb-2 block">Cargo de Membro Verificado</label>
-                            <select name="verifyRoleId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm focus:border-indigo-600 transition">
-                                <option value="">Nenhum cargo</option>
-                                <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.verifyRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
-                            </select>
-                        </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-[#12151d] p-8 rounded-[2rem] border border-gray-800">
+                        <label class="text-[10px] font-bold text-gray-600 block mb-2">CARGO AO ENTRAR</label>
+                        <select name="autoRoleId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm">
+                            <option value="">Nenhum</option>
+                            <% roles.forEach(r => { %> <option value="<%= r.id %>" <%= config.autoRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> <% }) %>
+                        </select>
                     </div>
                 </div>
                 <% } %>
-
-                <!-- ABA: BOAS-VINDAS -->
-                <% if(page === 'welcome') { %>
-                <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div class="bg-[#12151d] p-8 rounded-[2.5rem] border border-gray-800">
-                        <h3 class="text-xs font-black uppercase tracking-widest text-indigo-500 mb-6 italic">Mensagem no Servidor</h3>
-                        <div class="grid grid-cols-1 gap-6">
-                            <div>
-                                <label class="text-[10px] font-bold text-gray-600 uppercase mb-2 block">Escolha o Canal</label>
-                                <select name="welcomeChannelId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm mb-4">
-                                    <option value="">Desativado</option>
-                                    <% channels.filter(c => c.type === 0).forEach(ch => { %> <option value="<%= ch.id %>" <%= config.welcomeChannelId == ch.id ? 'selected' : '' %>># <%= ch.name %></option> <% }) %>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-bold text-gray-600 uppercase mb-2 block">Texto da Mensagem (Use {user} para marcar)</label>
-                                <textarea name="welcomeMsg" class="w-full bg-black border border-gray-800 p-5 rounded-2xl outline-none text-sm h-32 focus:border-indigo-600 transition"><%= config.welcomeMsg %></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#12151d] p-8 rounded-[2.5rem] border border-gray-800">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-xs font-black uppercase tracking-widest text-indigo-500 italic">Mensagem no Privado (DM)</h3>
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] font-bold text-gray-500 uppercase">Habilitar</span>
-                                <input type="checkbox" name="enableDm" value="true" <%= config.enableDm ? 'checked' : '' %> class="w-5 h-5 accent-indigo-600">
-                            </div>
-                        </div>
-                        <textarea name="welcomeDmMsg" class="w-full bg-black border border-gray-800 p-5 rounded-2xl outline-none text-sm h-32 focus:border-indigo-600 transition" placeholder="Olá {user}, bem-vindo ao servidor..."><%= config.welcomeDmMsg %></textarea>
-                    </div>
-                </div>
-                <% } %>
-
-                <!-- ABA: RECRUTAMENTO (AGORA COM CAMPOS REAIS) -->
-                <% if(page === 'form') { %>
-                <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div class="bg-[#12151d] p-8 rounded-[2.5rem] border border-purple-500/20 shadow-2xl">
-                        <h3 class="text-xs font-black uppercase tracking-widest text-purple-500 mb-8 italic">Configuração do Recrutamento Visual</h3>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div>
-                                <label class="text-[10px] font-bold text-gray-600 uppercase mb-2 block">Canal de Recebimento (Staff)</label>
-                                <select name="formStaffChannelId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm focus:border-purple-500 transition">
-                                    <option value="">Selecione um canal secreto...</option>
-                                    <% channels.filter(c => c.type === 0).forEach(ch => { %> 
-                                        <option value="<%= ch.id %>" <%= config.formStaffChannelId == ch.id ? 'selected' : '' %>># <%= ch.name %></option> 
-                                    <% }) %>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="text-[10px] font-bold text-gray-600 uppercase mb-2 block">Categoria dos Canais de Ficha</label>
-                                <select name="formCategoryId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm focus:border-purple-500 transition">
-                                    <option value="">Nenhuma (Criará no topo)</option>
-                                    <% channels.filter(c => c.type === 4).forEach(cat => { %> 
-                                        <option value="<%= cat.id %>" <%= config.formCategoryId == cat.id ? 'selected' : '' %>><%= cat.name %></option> 
-                                    <% }) %>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="text-[10px] font-bold text-gray-600 uppercase mb-2 block">Cargo Staff (Notificação)</label>
-                                <select name="staffRoleId" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm focus:border-purple-500 transition">
-                                    <option value="">Ninguém (Não marcar)</option>
-                                    <% roles.forEach(r => { %> 
-                                        <option value="<%= r.id %>" <%= config.staffRoleId == r.id ? 'selected' : '' %>><%= r.name %></option> 
-                                    <% }) %>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="text-[10px] font-bold text-gray-600 uppercase mb-2 block">Título Personalizado da Ficha</label>
-                                <input type="text" name="formTitle" value="<%= config.formTitle %>" placeholder="Ex: Recrutamento Staff 2026" class="w-full bg-black border border-gray-800 p-4 rounded-xl outline-none text-sm focus:border-purple-500 transition">
-                            </div>
-                        </div>
-
-                        <div class="mt-10 p-6 bg-purple-600/10 border border-purple-500/20 rounded-3xl flex items-center gap-4">
-                            <div class="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-                                <i class="fas fa-info text-white"></i>
-                            </div>
-                            <p class="text-xs text-purple-400 font-medium leading-relaxed">
-                                Este sistema cria um canal privado onde o membro deve enviar uma <span class="text-white font-bold">Foto ou Vídeo</span>. 
-                                Use o comando <code class="text-white bg-purple-900/50 px-2 py-0.5 rounded">/form</code> no Discord para gerar o botão.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <% } %>
-
-                <!-- ABA: ESTATÍSTICAS -->
-                <% if(page === 'stats') { %>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div class="bg-[#12151d] p-10 rounded-[3rem] border border-gray-800 text-center group hover:border-indigo-600 transition-all">
-                        <div class="w-16 h-16 bg-indigo-600/10 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl group-hover:scale-110 transition">
-                            <i class="fas fa-users"></i>
-                        </div>
-                        <p class="text-5xl font-black text-white tracking-tighter"><%= stats.members %></p>
-                        <p class="text-[10px] font-bold uppercase text-gray-500 mt-3 tracking-widest">Membros Totais</p>
-                    </div>
-                    <div class="bg-[#12151d] p-10 rounded-[3rem] border border-gray-800 text-center group hover:border-pink-600 transition-all">
-                        <div class="w-16 h-16 bg-pink-600/10 text-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl group-hover:scale-110 transition">
-                            <i class="fas fa-gem"></i>
-                        </div>
-                        <p class="text-5xl font-black text-white tracking-tighter"><%= stats.boosts %></p>
-                        <p class="text-[10px] font-bold uppercase text-gray-500 mt-3 tracking-widest">Server Boosts</p>
-                    </div>
-                    <div class="bg-[#12151d] p-10 rounded-[3rem] border border-gray-800 text-center group hover:border-emerald-600 transition-all">
-                        <div class="w-16 h-16 bg-emerald-600/10 text-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-6 text-2xl group-hover:scale-110 transition">
-                            <i class="fas fa-hashtag"></i>
-                        </div>
-                        <p class="text-5xl font-black text-white tracking-tighter"><%= stats.channels %></p>
-                        <p class="text-[10px] font-bold uppercase text-gray-500 mt-3 tracking-widest">Canais Ativos</p>
-                    </div>
-                </div>
-                <% } %>
-
             </form>
         </main>
     </div>
